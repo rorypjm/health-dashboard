@@ -10,7 +10,7 @@
   :root{
     --bg:#16181c; --panel:#1d2024; --panel-line:#2c3036;
     --ink:#e8e6e0; --ink-dim:#8b8f96;
-    --amber:#e8a23a; --slate:#6f97a8; --green:#7a9b6e; --red:#c1604f;
+    --amber:#e8a23a; --slate:#6f97a8; --green:#7a9b6e; --red:#c1604f; --purple:#9b7fb8;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   html,body{ background:var(--bg); color:var(--ink); font-family:'Space Grotesk',sans-serif; min-height:100vh; }
@@ -27,28 +27,41 @@
   .btn:hover{ border-color:var(--amber); color:var(--amber); }
   .hint{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-dim); margin-left:auto; }
 
-  .vitals{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--panel-line); border:1px solid var(--panel-line); margin-bottom:22px; }
+  .section-label{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); margin:18px 2px 8px; }
+
+  .vitals{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--panel-line); border:1px solid var(--panel-line); margin-bottom:8px; }
   .vital{ background:var(--panel); padding:14px; }
   .vital .label{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); margin-bottom:8px; }
-  .vital .num{ font-size:24px; font-weight:700; font-family:'JetBrains Mono',monospace; }
-  .vital .num .unit{ font-size:12px; color:var(--ink-dim); margin-left:3px; }
+  .vital .num{ font-size:22px; font-weight:700; font-family:'JetBrains Mono',monospace; }
+  .vital .num .unit{ font-size:11px; color:var(--ink-dim); margin-left:3px; }
 
   .panel{ background:var(--panel); border:1px solid var(--panel-line); margin-bottom:18px; }
   .panel-head{ display:flex; justify-content:space-between; align-items:baseline; padding:14px 16px 4px; }
   .panel-head h2{ font-size:14px; font-weight:600; }
   .meta{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-dim); }
+
+  .slider-wrap{ padding:2px 16px 14px; }
+  #rangeSlider{ touch-action:none; user-select:none; cursor:grab; }
+  #rangeSlider.dragging{ cursor:grabbing; }
   svg{ display:block; width:100%; height:auto; touch-action:none; user-select:none; }
 
   .legend{ display:flex; gap:14px; padding:8px 16px 14px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-dim); }
   .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:-1px; }
 
   .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:var(--panel-line); border:1px solid var(--panel-line); margin-bottom:22px; }
+  .grid3 .vital{ padding:14px; }
 
   .status{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-dim); text-align:center; margin-top:26px; line-height:1.7; }
   .status.error{ color:var(--red); }
   .status .stamp{ color:var(--amber); }
 
-  @media (max-width:640px){ .vitals{ grid-template-columns:repeat(2,1fr); } .grid2{ grid-template-columns:1fr; } h1{ font-size:21px; } }
+  @media (max-width:640px){
+    .vitals{ grid-template-columns:repeat(2,1fr); }
+    .grid3{ grid-template-columns:1fr 1fr; }
+    .grid2{ grid-template-columns:1fr; }
+    h1{ font-size:21px; }
+  }
 </style>
 </head>
 <body>
@@ -72,11 +85,18 @@
     <span class="hint">drag to pan · pinch / scroll to zoom</span>
   </div>
 
+  <div class="section-label">Averages — selected window</div>
   <div class="vitals" id="vitals"></div>
 
+  <div class="section-label">Totals — selected window</div>
+  <div class="grid3" id="totals"></div>
+
   <div class="panel">
-    <div class="panel-head"><h2>Daily Steps — drag / pinch this one</h2><span class="meta" id="windowMeta"></span></div>
+    <div class="panel-head"><h2>Daily Steps — drag / pinch this one</h2></div>
     <svg id="stepsChart" viewBox="0 0 840 200"></svg>
+    <div class="slider-wrap">
+      <svg id="rangeSlider" viewBox="0 0 840 36"></svg>
+    </div>
     <div class="legend">
       <span><span class="dot" style="background:var(--amber)"></span>weekday</span>
       <span><span class="dot" style="background:var(--slate)"></span>weekend</span>
@@ -85,18 +105,24 @@
 
   <div class="grid2">
     <div class="panel">
+      <div class="panel-head"><h2>Walking + Running Distance</h2></div>
+      <svg id="distanceChart" viewBox="0 0 400 170"></svg>
+    </div>
+    <div class="panel">
       <div class="panel-head"><h2>Weight</h2></div>
       <svg id="weightChart" viewBox="0 0 400 170"></svg>
     </div>
+  </div>
+
+  <div class="grid2">
     <div class="panel">
       <div class="panel-head"><h2>Resting HR</h2></div>
       <svg id="rhrChart" viewBox="0 0 400 170"></svg>
     </div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-head"><h2>Sleep</h2></div>
-    <svg id="sleepChart" viewBox="0 0 840 150"></svg>
+    <div class="panel">
+      <div class="panel-head"><h2>Sleep</h2></div>
+      <svg id="sleepChart" viewBox="0 0 400 170"></svg>
+    </div>
   </div>
 
   <div class="status" id="statusLine">connecting to data source…</div>
@@ -107,19 +133,38 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbzhiv7g9fW8Elf6R7X779X-piYOEVofgMp97VAvbuqtT7livTpz0UG4hoSgSSvi1-Q/exec";
 // ====================================================
 
-const COLORS = { amber:"#e8a23a", slate:"#6f97a8", green:"#7a9b6e", red:"#c1604f", ink:"#e8e6e0", inkDim:"#8b8f96", panelLine:"#2c3036" };
+const COLORS = { amber:"#e8a23a", slate:"#6f97a8", green:"#7a9b6e", red:"#c1604f", purple:"#9b7fb8", ink:"#e8e6e0", inkDim:"#8b8f96", panelLine:"#2c3036" };
 
 let DATA = null;
 let range = [0, 0];
 
+// ---------- render throttling ----------
+// Dragging/pinching fires pointermove dozens-to-hundreds of times per second.
+// Re-building 4 SVGs (up to 1000+ points each) on every single one of those
+// events is what was freezing the page on Mac and crashing it on an older
+// iPhone. requestAnimationFrame caps actual rendering to once per screen
+// refresh (~60fps max), no matter how fast input events arrive — the most
+// recent range always wins, intermediate ones are simply skipped.
+let renderQueued = false;
+function scheduleRender(){
+  if(renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(() => {
+    renderQueued = false;
+    render();
+  });
+}
+
 function isWeekend(dateStr){ const wd = new Date(dateStr+"T00:00:00").getDay(); return wd===0||wd===6; }
+function isValid(v){ return v !== null && v !== undefined && !isNaN(v); }
 function avg(arr){
-  const valid = arr.filter(v => v !== null && v !== undefined && !isNaN(v));
+  const valid = arr.filter(isValid);
   return valid.length ? valid.reduce((a,b)=>a+b,0)/valid.length : 0;
 }
-function validCount(arr){
-  return arr.filter(v => v !== null && v !== undefined && !isNaN(v)).length;
+function sum(arr){
+  return arr.filter(isValid).reduce((a,b)=>a+b,0);
 }
+function validCount(arr){ return arr.filter(isValid).length; }
 function monthLabel(dateStr){ return new Date(dateStr+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
 
 function clampRange(lo, hi, total){
@@ -139,6 +184,7 @@ async function loadData(){
     if(json.error) throw new Error(json.error);
     if(!json.dates || json.dates.length === 0) throw new Error("Sheet returned no rows");
     DATA = json;
+    if(!DATA.distance) DATA.distance = DATA.dates.map(() => null); // older API deployments won't have this yet
     range = [0, DATA.dates.length - 1];
     document.getElementById("eyebrow").textContent = "Live Data";
     document.getElementById("statusLine").innerHTML = '<span class="stamp">LIVE</span> · last updated ' + new Date(json.updatedAt).toLocaleString();
@@ -154,38 +200,58 @@ function render(){
   if(!DATA) return;
   const [lo, hi] = range;
   const n = DATA.dates.length;
+  const windowDays = hi - lo + 1;
+  const windowWeeks = windowDays / 7;
 
-  document.getElementById("rangeLabel").innerHTML = monthLabel(DATA.dates[lo]) + " — " + monthLabel(DATA.dates[hi]) + "<br>" + (hi-lo+1) + " of " + n + " days";
-  document.getElementById("windowMeta").textContent = (lo+1) + "–" + (hi+1) + " of " + n;
-
-  const weightSlice = DATA.weight.slice(lo, hi+1);
-  const realWeights = weightSlice.filter(v => v !== null && v !== undefined && !isNaN(v));
-  const wStart = realWeights.length ? realWeights[0] : null;
-  const wEnd = realWeights.length ? realWeights[realWeights.length-1] : null;
-  const weightDeltaStr = (wStart !== null && wEnd !== null)
-    ? (wEnd-wStart>=0?"+":"") + (wEnd-wStart).toFixed(1)
-    : "—";
+  document.getElementById("rangeLabel").innerHTML = monthLabel(DATA.dates[lo]) + " — " + monthLabel(DATA.dates[hi]) + "<br>" + windowDays + " of " + n + " days";
+  renderRangeSlider();
 
   const stepsSlice = DATA.steps.slice(lo,hi+1);
   const sleepSlice = DATA.sleep.slice(lo,hi+1);
   const rhrSlice = DATA.rhr.slice(lo,hi+1);
+  const distSlice = DATA.distance.slice(lo,hi+1);
+  const weightSlice = DATA.weight.slice(lo, hi+1);
+
+  const realWeights = weightSlice.filter(isValid);
+  const wStart = realWeights.length ? realWeights[0] : null;
+  const wEnd = realWeights.length ? realWeights[realWeights.length-1] : null;
+  const weightDeltaStr = (wStart !== null && wEnd !== null) ? (wEnd-wStart>=0?"+":"") + (wEnd-wStart).toFixed(1) : "—";
+
   const sleepCoverage = validCount(sleepSlice);
   const rhrCoverage = validCount(rhrSlice);
+  const distCoverage = validCount(distSlice);
 
+  // ---- averages row ----
   const vitals = [
-    { label:"Avg Steps (window)", val: Math.round(avg(stepsSlice)).toLocaleString(), unit:"" },
-    { label:"Avg Sleep (window)", val: sleepCoverage ? avg(sleepSlice).toFixed(1) : "—", unit: sleepCoverage ? "hrs ("+sleepCoverage+"d)" : "no data" },
-    { label:"Avg RHR (window)", val: rhrCoverage ? avg(rhrSlice).toFixed(0) : "—", unit: rhrCoverage ? "bpm ("+rhrCoverage+"d)" : "no data" },
-    { label:"Weight Δ (window)", val: weightDeltaStr, unit: wStart!==null ? "kg" : "" },
+    { label:"Avg Steps / day", val: Math.round(avg(stepsSlice)).toLocaleString(), unit:"" },
+    { label:"Avg Sleep", val: sleepCoverage ? avg(sleepSlice).toFixed(1) : "—", unit: sleepCoverage ? "hrs ("+sleepCoverage+"d)" : "no data" },
+    { label:"Avg RHR", val: rhrCoverage ? avg(rhrSlice).toFixed(0) : "—", unit: rhrCoverage ? "bpm ("+rhrCoverage+"d)" : "no data" },
+    { label:"Weight Δ", val: weightDeltaStr, unit: wStart!==null ? "kg" : "" },
   ];
   document.getElementById("vitals").innerHTML = vitals.map(v =>
     '<div class="vital"><div class="label">'+v.label+'</div><div class="num">'+v.val+'<span class="unit">'+v.unit+'</span></div></div>'
   ).join("");
 
+  // ---- totals row ----
+  const totalSteps = Math.round(sum(stepsSlice));
+  const totalDist = distCoverage ? sum(distSlice).toFixed(1) : null;
+  const totalSleep = sleepCoverage ? sum(sleepSlice).toFixed(0) : null;
+  const avgWeeklySteps = windowWeeks >= 0.5 ? Math.round(totalSteps / windowWeeks).toLocaleString() : null;
+
+  const totals = [
+    { label:"Total Steps", val: totalSteps.toLocaleString(), unit:"" },
+    { label:"Total Distance", val: totalDist !== null ? totalDist : "—", unit: totalDist !== null ? "km" : "no data" },
+    { label:"Avg Steps / week", val: avgWeeklySteps !== null ? avgWeeklySteps : "—", unit: avgWeeklySteps !== null ? "" : "window < 1wk" },
+  ];
+  document.getElementById("totals").innerHTML = totals.map(v =>
+    '<div class="vital"><div class="label">'+v.label+'</div><div class="num">'+v.val+'<span class="unit">'+v.unit+'</span></div></div>'
+  ).join("");
+
   renderStepsChart();
+  renderLineChart("distanceChart", DATA.distance, COLORS.purple, 2, "km");
   renderLineChart("weightChart", DATA.weight, COLORS.amber, 1, "kg");
   renderLineChart("rhrChart", DATA.rhr, COLORS.slate, 0, "bpm");
-  renderLineChart("sleepChart", DATA.sleep, COLORS.green, 1, "h", 840, 150);
+  renderLineChart("sleepChart", DATA.sleep, COLORS.green, 1, "h");
 }
 
 function renderStepsChart(){
@@ -193,10 +259,18 @@ function renderStepsChart(){
   const width = 840, height = 200, padL=40, padB=24, padT=16, padR=12;
   const plotW = width-padL-padR, plotH = height-padT-padB;
   const [lo, hi] = range;
-  const visible = DATA.steps.slice(lo, hi+1).map(v => (v === null || v === undefined || isNaN(v)) ? 0 : v);
+  const visible = DATA.steps.slice(lo, hi+1).map(v => isValid(v) ? v : 0);
   const dates = DATA.dates.slice(lo, hi+1);
   const n = visible.length;
   const maxV = (visible.length ? Math.max(...visible) : 0) * 1.1 || 1;
+
+  // When zoomed way out (hundreds/thousands of days), drawing one <rect> per
+  // day is what made dragging unusable — thousands of DOM nodes rebuilt on
+  // every frame. Past a threshold, draw a filled area path instead: visually
+  // almost identical at that zoom level (individual bars aren't
+  // distinguishable anyway once squeezed into a few hundred pixels), but a
+  // single <path> instead of thousands of <rect> elements.
+  const useBars = n <= 200;
 
   let els = "";
   const gridVals = [0, Math.round(maxV/2/1000)*1000, Math.round(maxV/1000)*1000];
@@ -206,25 +280,124 @@ function renderStepsChart(){
     els += '<text x="4" y="'+(y+3)+'" font-family="JetBrains Mono" font-size="9" fill="'+COLORS.inkDim+'">'+(v>=1000?(v/1000)+"k":v)+'</text>';
   });
 
-  for(let i=0;i<n;i++){
-    const x = padL + (i/Math.max(1,n-1))*plotW;
-    const barW = Math.max(1, plotW/n - (n>60?0.5:2));
-    const bh = (visible[i]/maxV)*plotH;
-    const y = padT + plotH - bh;
-    const color = isWeekend(dates[i]) ? COLORS.slate : COLORS.amber;
-    els += '<rect x="'+(x-barW/2)+'" y="'+y+'" width="'+barW+'" height="'+bh+'" fill="'+color+'" opacity="0.92"/>';
+  if(useBars){
+    for(let i=0;i<n;i++){
+      const x = padL + (i/Math.max(1,n-1))*plotW;
+      const barW = Math.max(1, plotW/n - (n>60?0.5:2));
+      const bh = (visible[i]/maxV)*plotH;
+      const y = padT + plotH - bh;
+      const color = isWeekend(dates[i]) ? COLORS.slate : COLORS.amber;
+      els += '<rect x="'+(x-barW/2).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+bh.toFixed(1)+'" fill="'+color+'" opacity="0.92"/>';
+    }
+  } else {
+    const pts = visible.map((v,i) => {
+      const x = padL + (i/Math.max(1,n-1))*plotW;
+      const y = padT + plotH - (v/maxV)*plotH;
+      return [x,y];
+    });
+    const linePath = "M " + pts.map(p => p[0].toFixed(1)+","+p[1].toFixed(1)).join(" L ");
+    const areaPath = linePath + " L " + pts[n-1][0].toFixed(1) + "," + (padT+plotH) + " L " + pts[0][0].toFixed(1) + "," + (padT+plotH) + " Z";
+    els += '<path d="'+areaPath+'" fill="'+COLORS.amber+'" opacity="0.5"/>';
+    els += '<path d="'+linePath+'" fill="none" stroke="'+COLORS.amber+'" stroke-width="1.2"/>';
   }
 
   const tickCount = Math.min(6, n);
   for(let t=0;t<tickCount;t++){
     const i = Math.round((t/Math.max(1,tickCount-1))*(n-1));
     const x = padL + (i/Math.max(1,n-1))*plotW;
-    els += '<text x="'+x+'" y="'+(height-6)+'" font-family="JetBrains Mono" font-size="9" fill="'+COLORS.inkDim+'" text-anchor="middle">'+monthLabel(dates[i])+'</text>';
+    els += '<text x="'+x.toFixed(1)+'" y="'+(height-6)+'" font-family="JetBrains Mono" font-size="9" fill="'+COLORS.inkDim+'" text-anchor="middle">'+monthLabel(dates[i])+'</text>';
   }
 
   svg.innerHTML = els;
   attachInteraction(svg, width, plotW, padL);
 }
+
+// ---------- range slider: shows where the current window sits within the
+// full history, drag the body to pan, drag either edge handle to resize ----------
+function renderRangeSlider(){
+  const svg = document.getElementById("rangeSlider");
+  const width = 840, height = 36;
+  const trackY = 15, trackH = 8;
+  const handleW = 10;
+  const [lo, hi] = range;
+  const n = DATA.dates.length;
+
+  const xForIdx = (i) => (i / Math.max(1, n-1)) * width;
+  const thumbX1 = xForIdx(lo);
+  const thumbX2 = xForIdx(hi);
+  const thumbW = Math.max(handleW * 2, thumbX2 - thumbX1);
+
+  let els = "";
+  // full track (the whole history, always visible as context)
+  els += '<rect x="0" y="'+trackY+'" width="'+width+'" height="'+trackH+'" rx="4" fill="'+COLORS.panelLine+'"/>';
+  // thumb (current window) — the draggable highlighted segment
+  els += '<rect class="rs-thumb" x="'+thumbX1.toFixed(1)+'" y="'+(trackY-3)+'" width="'+thumbW.toFixed(1)+'" height="'+(trackH+6)+'" rx="5" fill="'+COLORS.amber+'" opacity="0.85" style="cursor:grab"/>';
+  // edge handles — small grab tabs at each end of the thumb, for resizing
+  els += '<rect class="rs-handle-left" x="'+(thumbX1-handleW/2).toFixed(1)+'" y="'+(trackY-6)+'" width="'+handleW+'" height="'+(trackH+12)+'" rx="3" fill="'+COLORS.ink+'" opacity="0.9" style="cursor:ew-resize"/>';
+  els += '<rect class="rs-handle-right" x="'+(thumbX1+thumbW-handleW/2).toFixed(1)+'" y="'+(trackY-6)+'" width="'+handleW+'" height="'+(trackH+12)+'" rx="3" fill="'+COLORS.ink+'" opacity="0.9" style="cursor:ew-resize"/>';
+
+  svg.innerHTML = els;
+  attachSliderInteraction(svg, width);
+}
+
+function attachSliderInteraction(svg, width){
+  if(svg.dataset.interactionBound === "1") return;
+  svg.dataset.interactionBound = "1";
+
+  function toLocalX(clientX){
+    const rect = svg.getBoundingClientRect();
+    return ((clientX - rect.left) / rect.width) * width;
+  }
+  function idxForX(x){
+    return (x / width) * (DATA.dates.length - 1);
+  }
+
+  let mode = null; // "pan" | "resize-left" | "resize-right"
+  let dragStartX = 0;
+  let dragStartRange = null;
+
+  svg.onpointerdown = (e) => {
+    const target = e.target;
+    const x = toLocalX(e.clientX);
+    dragStartX = x;
+    dragStartRange = [...range];
+
+    if(target.classList.contains("rs-handle-left")) mode = "resize-left";
+    else if(target.classList.contains("rs-handle-right")) mode = "resize-right";
+    else mode = "pan";
+
+    svg.setPointerCapture(e.pointerId);
+    svg.classList.add("dragging");
+  };
+
+  svg.onpointermove = (e) => {
+    if(!mode) return;
+    const x = toLocalX(e.clientX);
+    const deltaIdx = idxForX(x) - idxForX(dragStartX);
+    const total = DATA.dates.length;
+    let [olo, ohi] = dragStartRange;
+
+    if(mode === "pan"){
+      let newLo = olo + deltaIdx, newHi = ohi + deltaIdx;
+      if(newLo < 0){ newHi -= newLo; newLo = 0; }
+      if(newHi > total-1){ newLo -= (newHi-(total-1)); newHi = total-1; }
+      range = clampRange(newLo, newHi, total);
+    } else if(mode === "resize-left"){
+      let newLo = olo + deltaIdx;
+      range = clampRange(newLo, ohi, total);
+    } else if(mode === "resize-right"){
+      let newHi = ohi + deltaIdx;
+      range = clampRange(olo, newHi, total);
+    }
+    scheduleRender();
+  };
+
+  svg.onpointerup = svg.onpointercancel = (e) => {
+    mode = null;
+    svg.classList.remove("dragging");
+  };
+}
+
 
 function renderLineChart(id, fullValues, color, decimals, unit, width, height){
   width = width || 400; height = height || 170;
@@ -235,7 +408,7 @@ function renderLineChart(id, fullValues, color, decimals, unit, width, height){
   const visible = fullValues.slice(lo, hi+1);
   const n = visible.length;
 
-  const realValues = visible.filter(v => v !== null && v !== undefined && !isNaN(v));
+  const realValues = visible.filter(isValid);
   if(realValues.length < 2){
     svg.innerHTML = '<text x="'+(width/2)+'" y="'+(height/2)+'" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="'+COLORS.inkDim+'">not enough data in this window</text>';
     return;
@@ -245,17 +418,13 @@ function renderLineChart(id, fullValues, color, decimals, unit, width, height){
   const pad = (maxV-minV)*0.2 || 0.5;
   const rlo = minV-pad, rhi = maxV+pad;
 
-  // Build points only for real values; nulls become explicit gaps (no point at all)
-  // rather than being plotted as 0. This breaks the line into separate segments
-  // wherever data is missing, instead of drawing a fake plunge to zero.
   const pts = visible.map((v,i) => {
-    if(v === null || v === undefined || isNaN(v)) return null;
+    if(!isValid(v)) return null;
     const x = padL + (i/(n-1))*plotW;
     const y = padT + plotH - ((v-rlo)/(rhi-rlo))*plotH;
     return [x,y];
   });
 
-  // group consecutive real points into segments, breaking at each null
   const segments = [];
   let current = [];
   pts.forEach(p => {
@@ -277,7 +446,6 @@ function renderLineChart(id, fullValues, color, decimals, unit, width, height){
 
   segments.forEach(seg => {
     if(seg.length < 2){
-      // lone point with no neighbor — draw as a small dot, not a line
       els += '<circle cx="'+seg[0][0].toFixed(1)+'" cy="'+seg[0][1].toFixed(1)+'" r="2.5" fill="'+color+'" opacity="0.7"/>';
       return;
     }
@@ -287,14 +455,12 @@ function renderLineChart(id, fullValues, color, decimals, unit, width, height){
     els += '<path d="'+linePath+'" fill="none" stroke="'+color+'" stroke-width="2"/>';
   });
 
-  // marker on the very last real point overall
   const lastSeg = segments[segments.length-1];
   if(lastSeg && lastSeg.length){
     const lastPt = lastSeg[lastSeg.length-1];
     els += '<circle cx="'+lastPt[0].toFixed(1)+'" cy="'+lastPt[1].toFixed(1)+'" r="3.5" fill="'+color+'"/>';
   }
 
-  // delta computed from first/last REAL values, not raw array endpoints
   const delta = realValues[realValues.length-1] - realValues[0];
   const dColor = delta===0 ? COLORS.inkDim : (delta<0 ? COLORS.green : COLORS.red);
   els += '<text x="'+(width-padR)+'" y="'+(padT-2)+'" text-anchor="end" font-family="JetBrains Mono" font-size="10" fill="'+dColor+'">'+(delta>=0?"+":"")+delta.toFixed(decimals)+unit+' in window</text>';
@@ -304,6 +470,12 @@ function renderLineChart(id, fullValues, color, decimals, unit, width, height){
 
 // ---------- interaction: drag to pan, pinch/wheel to zoom (bound to steps chart) ----------
 function attachInteraction(svg, width, plotW, padL){
+  // avoid re-binding handlers on every render — they're idempotent (always
+  // overwritten with onX = ...) so this is safe, but guard anyway so we're
+  // not doing extra work each frame
+  if(svg.dataset.interactionBound === "1") { return; }
+  svg.dataset.interactionBound = "1";
+
   const pointers = new Map();
   let dragStart = null;
 
@@ -320,6 +492,7 @@ function attachInteraction(svg, width, plotW, padL){
     svg.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, { x: toLocalX(e.clientX) });
     if(pointers.size === 1) dragStart = { x: toLocalX(e.clientX), range: [...range] };
+    svg.style.cursor = "grabbing";
   };
 
   svg.onpointermove = (e) => {
@@ -342,7 +515,7 @@ function attachInteraction(svg, width, plotW, padL){
       let newLo = centerIdx - (centerIdx-olo)*(newSpan/span);
       let newHi = centerIdx + (ohi-centerIdx)*(newSpan/span);
       range = clampRange(newLo, newHi, DATA.dates.length);
-      render();
+      scheduleRender();
     } else if(pointers.size === 1 && dragStart){
       const dx = toLocalX(e.clientX) - dragStart.x;
       const [olo, ohi] = dragStart.range;
@@ -353,12 +526,13 @@ function attachInteraction(svg, width, plotW, padL){
       if(newLo < 0){ newHi -= newLo; newLo = 0; }
       if(newHi > total-1){ newLo -= (newHi-(total-1)); newHi = total-1; }
       range = clampRange(newLo, newHi, total);
-      render();
+      scheduleRender();
     }
   };
 
   svg.onpointerup = svg.onpointercancel = (e) => {
     pointers.delete(e.pointerId);
+    svg.style.cursor = "grab";
     if(pointers.size < 2){
       dragStart = pointers.size === 1 ? { x: [...pointers.values()][0].x, range: [...range] } : null;
     }
@@ -375,7 +549,7 @@ function attachInteraction(svg, width, plotW, padL){
     let newLo = centerIdx - (centerIdx-lo)*(newSpan/span);
     let newHi = centerIdx + (hi-centerIdx)*(newSpan/span);
     range = clampRange(newLo, newHi, DATA.dates.length);
-    render();
+    scheduleRender();
   };
 
   svg.style.cursor = "grab";
