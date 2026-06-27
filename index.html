@@ -25,9 +25,13 @@
   .controls{ display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
   .btn{ font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.04em; background:var(--panel); color:var(--ink); border:1px solid var(--panel-line); padding:6px 10px; cursor:pointer; user-select:none; }
   .btn:hover{ border-color:var(--amber); color:var(--amber); }
-  .hint{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-dim); margin-left:auto; }
+  .btn-range.active{ background:var(--amber); color:#16181c; border-color:var(--amber); font-weight:600; }
 
-  .section-label{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); margin:18px 2px 8px; }
+  .section-label{ display:flex; align-items:baseline; gap:8px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); margin:18px 2px 8px; }
+  .section-label .dot{ width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .section-label.totals-label .dot{ background:var(--purple); }
+  .section-label.avg-label .dot{ background:var(--amber); }
+  .hint{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-dim); margin-left:auto; }
 
   .vitals{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--panel-line); border:1px solid var(--panel-line); margin-bottom:8px; }
   .vital{ background:var(--panel); padding:14px; }
@@ -50,7 +54,7 @@
 
   .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
   .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:var(--panel-line); border:1px solid var(--panel-line); margin-bottom:22px; }
-  .grid3 .vital{ padding:14px; }
+  .grid3 .vital{ padding:14px; border-top:2px solid var(--purple); }
 
   .status{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-dim); text-align:center; margin-top:26px; line-height:1.7; }
   .status.error{ color:var(--red); }
@@ -76,19 +80,19 @@
   </header>
 
   <div class="controls">
-    <button class="btn" id="panLeft">◀ pan</button>
-    <button class="btn" id="panRight">pan ▶</button>
-    <button class="btn" id="zoomIn">zoom in</button>
-    <button class="btn" id="zoomOut">zoom out</button>
-    <button class="btn" id="resetBtn">reset</button>
-    <button class="btn" id="refreshBtn">↻ refresh data</button>
-    <span class="hint">drag to pan · pinch / scroll to zoom</span>
+    <button class="btn btn-range" data-days="7">7d</button>
+    <button class="btn btn-range" data-days="30">30d</button>
+    <button class="btn btn-range" data-days="90">90d</button>
+    <button class="btn btn-range" data-days="365">1y</button>
+    <button class="btn btn-range" data-days="all">All</button>
+    <button class="btn" id="refreshBtn">↻ refresh</button>
+    <span class="hint">drag slider or chart · pinch / scroll to zoom</span>
   </div>
 
-  <div class="section-label">Averages — selected window</div>
+  <div class="section-label avg-label"><span class="dot"></span>Averages — selected window</div>
   <div class="vitals" id="vitals"></div>
 
-  <div class="section-label">Totals — selected window</div>
+  <div class="section-label totals-label"><span class="dot"></span>Totals — selected window</div>
   <div class="grid3" id="totals"></div>
 
   <div class="panel">
@@ -205,6 +209,7 @@ function render(){
 
   document.getElementById("rangeLabel").innerHTML = monthLabel(DATA.dates[lo]) + " — " + monthLabel(DATA.dates[hi]) + "<br>" + windowDays + " of " + n + " days";
   renderRangeSlider();
+  updateActiveRangeButton();
 
   const stepsSlice = DATA.steps.slice(lo,hi+1);
   const sleepSlice = DATA.sleep.slice(lo,hi+1);
@@ -555,36 +560,49 @@ function attachInteraction(svg, width, plotW, padL){
   svg.style.cursor = "grab";
 }
 
-// ---------- button controls ----------
-document.getElementById("panLeft").onclick = () => {
-  const span = range[1]-range[0];
-  const delta = -Math.max(2, Math.round(span*0.25));
-  let [lo,hi] = range; lo+=delta; hi+=delta;
+// ---------- quick-jump range buttons (7d / 30d / 90d / 1y / All) ----------
+const rangeButtons = document.querySelectorAll(".btn-range");
+rangeButtons.forEach(btn => {
+  btn.onclick = () => {
+    const total = DATA.dates.length;
+    const daysAttr = btn.dataset.days;
+    if(daysAttr === "all"){
+      range = [0, total-1];
+    } else {
+      const days = parseInt(daysAttr, 10);
+      const hi = total - 1;
+      const lo = Math.max(0, hi - days + 1);
+      range = clampRange(lo, hi, total);
+    }
+    render();
+  };
+});
+
+// Highlights whichever quick-jump button matches the current window size,
+// so the controls stay in sync with drag/pinch/slider interactions too —
+// not just clicks on the buttons themselves.
+function updateActiveRangeButton(){
   const total = DATA.dates.length;
-  if(lo<0){ hi-=lo; lo=0; }
-  range = clampRange(lo,hi,total); render();
-};
-document.getElementById("panRight").onclick = () => {
-  const span = range[1]-range[0];
-  const delta = Math.max(2, Math.round(span*0.25));
-  let [lo,hi] = range; lo+=delta; hi+=delta;
-  const total = DATA.dates.length;
-  if(hi>total-1){ lo-=(hi-(total-1)); hi=total-1; }
-  range = clampRange(lo,hi,total); render();
-};
-document.getElementById("zoomIn").onclick = () => {
-  const [lo,hi] = range; const center=(lo+hi)/2; const span=hi-lo;
-  const newSpan = Math.max(4, span*0.7);
-  range = clampRange(center-(center-lo)*(newSpan/span), center+(hi-center)*(newSpan/span), DATA.dates.length);
-  render();
-};
-document.getElementById("zoomOut").onclick = () => {
-  const [lo,hi] = range; const center=(lo+hi)/2; const span=hi-lo;
-  const newSpan = Math.max(4, Math.min(DATA.dates.length-1, span*1.4));
-  range = clampRange(center-(center-lo)*(newSpan/span), center+(hi-center)*(newSpan/span), DATA.dates.length);
-  render();
-};
-document.getElementById("resetBtn").onclick = () => { range = [0, DATA.dates.length-1]; render(); };
+  const windowDays = range[1] - range[0] + 1;
+  let matched = null;
+  rangeButtons.forEach(btn => {
+    const daysAttr = btn.dataset.days;
+    const target = daysAttr === "all" ? total : parseInt(daysAttr, 10);
+    // "all" or close enough to the full range counts as a match for All;
+    // for fixed windows, match if we're within a couple days of that target
+    // AND anchored at the most recent date (otherwise scrubbing through
+    // history would falsely light up "30d" just because the span matches).
+    const isAnchoredAtEnd = range[1] === total - 1;
+    if(daysAttr === "all" && windowDays === total){
+      matched = btn;
+    } else if(daysAttr !== "all" && isAnchoredAtEnd && Math.abs(windowDays - target) <= 1){
+      matched = btn;
+    }
+  });
+  rangeButtons.forEach(btn => btn.classList.remove("active"));
+  if(matched) matched.classList.add("active");
+}
+
 document.getElementById("refreshBtn").onclick = loadData;
 
 loadData();
